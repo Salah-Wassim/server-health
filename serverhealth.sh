@@ -6,9 +6,7 @@ LOGFILE="health_server_report.log"
 useddisk=$(df -h /mnt/c | tail -n 1 | awk '{print $5}')
 echo "Espace disque utilisé : " $useddisk
 
-echo "Voulez vous définir une limite ? (y/n)"
-
-read answer
+read -p "Voulez vous définir une limite ? (y/n) : " answer
 
 case $answer in
 y|Y) while true; do
@@ -30,9 +28,7 @@ else
 	echo "Espace disque OK"
 fi
 
-echo "Voulez vous rechercher un processus en cours ? (y/n)"
-
-read process
+read -p "Voulez vous rechercher un processus en cours ? (y/n) : " process
 
 case $process in
 y|Y) ps -f -u scorpion > allprocess;;
@@ -40,19 +36,39 @@ n|N) echo "Aucun processus rechercher";;
 *) echo "Réponse incorrecte"
 esac
 
-echo "Entrer le nom d'un processus (ex. : bash, sshd) : "
-
-read entryprocess
+read -p "Entrer le nom d'un processus (ex. : bash, sshd) : " entryprocess
 
 grep "$entryprocess" allprocess
 
 rm allprocess
 
 echo -e "\n============================="
-echo "===     Rapport Santé     ===" | tee -a "$LOGFILE"
+echo "===     Rapport Santé     ==="
 echo "============================="
-echo "Date : $(date)" | tee -a "$LOGFILE"
-echo "Espace disque utilisé : $useddisk" | tee -a "$LOGFILE"
-echo "Limite de l'espace disque définit : $limit" | tee -a "$LOGFILE"
-echo "Process recherché : $entryprocess" | tee -a "$LOGFILE"
-echo "===FIN===" | tee -a "$LOGFILE"
+echo "Date : $(date)"
+echo "Espace disque utilisé : $useddisk"
+echo "Limite de l'espace disque définit : $limit"
+echo "Process recherché : $entryprocess"
+echo "===FIN==="
+
+read -p "Souhaitez-vous enregistrer ce rapport ? (y/n) : " save
+
+case "$save" in
+y|Y)
+	{
+	  echo -e "\n=============================";
+	  echo "===     Rapport Santé     ===";
+	  echo "=============================";
+	  echo "Date : $(date)";
+	  echo "Espace disque utilisé : $useddisk";
+	  echo "Limite de l'espace disque définit : $limit";
+	  echo "Process recherché : $entryprocess";
+          echo "===FIN===";
+	} >> $LOGFILE
+	echo "Rapport enregistré dans health_server_report.log";;
+n|N)
+	echo "Rapport non enregistrer, au revoir !"
+	exit 0;;
+*)
+	echo "Réponse incorrecte"
+esac
