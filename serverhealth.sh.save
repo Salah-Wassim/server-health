@@ -3,9 +3,10 @@
 
 LOGFILE="health_server_report.log"
 
-useddisk=$(df -h /mnt/c | tail -n 1 | awk '{print $5}')
+used_disk() {
+	df -h /mnt/c | tail -n 1 | awk '{print $5}
 
-echo "Espace disque utilisé : " $useddisk
+echo "Espace disque utilisé : " used_disk
 
 read -p "Voulez vous définir une limite ? (y/n) : " answer
 
@@ -32,22 +33,24 @@ fi
 read -p "Voulez vous rechercher un processus en cours ? (y/n) : " process
 
 case $process in
-y|Y)
-	ps -f -u scorpion > allprocess
-	read -p "Entrer le nom d'un processus (ex. : bash, sshd) : " entryprocess
-	grep "$entryprocess" allprocess
-	rm allprocess;;
+y|Y) ps -f -u scorpion > allprocess;;
 n|N) echo "Aucun processus rechercher";;
 *) echo "Réponse incorrecte"
 esac
+
+read -p "Entrer le nom d'un processus (ex. : bash, sshd) : " entryprocess
+
+grep "$entryprocess" allprocess
+
+rm allprocess
 
 echo -e "\n============================="
 echo "===     Rapport Santé     ==="
 echo "============================="
 echo "Date : $(date)"
-echo "Espace disque utilisé : $useddisk"
+echo "Espace disque utilisé : used_disk"
 echo "Limite de l'espace disque définit : $limit"
-echo "Process recherché : ${entryprocess:-aucun}"
+echo "Process recherché : $entryprocess"
 echo "===FIN==="
 
 read -p "Souhaitez-vous enregistrer ce rapport ? (y/n) : " save
@@ -61,7 +64,7 @@ y|Y)
 	  echo "Date : $(date)";
 	  echo "Espace disque utilisé : $useddisk";
 	  echo "Limite de l'espace disque définit : $limit";
-	  echo "Process recherché : ${entryprocess:-aucun}";
+	  echo "Process recherché : $entryprocess";
           echo "===FIN===";
 	} >> $LOGFILE
 	echo "Rapport enregistré dans health_server_report.log";;
