@@ -3,7 +3,16 @@
 
 LOGFILE="health_server_report.log"
 
-useddisk=$(df -h /mnt/c | tail -n 1 | awk '{print $5}')
+used_disk() {
+	df -h /mnt/c | tail -n 1 | awk '{print $5}'
+}
+
+useddisk=$(used_disk)
+
+if [[ -z $useddisk ]]; then
+	echo "Erreur lors de la récupération de l'espace disque"
+	exit 1
+fi
 
 echo "Espace disque utilisé : " $useddisk
 
