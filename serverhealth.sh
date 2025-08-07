@@ -2,6 +2,7 @@
 # serverhealth
 
 LOGFILE="health_server_report.log"
+LIMIT="limit_disk.log"
 
 used_disk() {
 	df -h /mnt/c | tail -n 1 | awk '{print $5}'
@@ -14,14 +15,21 @@ if [[ -z $useddisk ]]; then
 	exit 1
 fi
 
+saved_limit=$(cat $LIMIT)
+
 echo "Espace disque utilisé : " $useddisk
 
-read -p "Voulez vous définir une limite ? (y/n) : " answer
+if [[ -n $saved_limit ]]; then
+	echo "Limite disque enregistré : " $saved_limit
+fi
+
+read -p "Voulez vous (re) définir une limite ? (y/n) : " answer
 
 case $answer in
 y|Y) while true; do
    	read -p "Entrez un nombre : " limit
    	if [[ "$limit" =~ ^[0-9]+$ ]]; then
+		echo $limit > $LIMIT
    		echo "Limite enregistré : " $limit;
    		break
    	else
@@ -32,7 +40,7 @@ n|N) echo "Aucune limite défine";;
 *) "Réponse incorrecte"
 esac
 
-if [[ "$useddisk" =~ ^[0-9]+%$ ]] && [ "${useddisk%\%}" -gt "$limit" ]; then
+if [[ "$useddisk" =~ ^[0-9]+%$ ]] && [ "${useddisk%\%}" -gt "${limit:-$saved_limit}" ]; then
 	echo "Attention l'espace disque à dépassé la limite" used_disk
 else
 	echo "Espace disque OK"
@@ -50,13 +58,34 @@ n|N) echo "Aucun processus rechercher";;
 *) echo "Réponse incorrecte"
 esac
 
+cpu_load(){
+	top -b -n 1 | head -n 3 | grep "%Cpu(s)"
+}
+
+display_cpu_load=$(cpu_load)
+
+if [[ -z $display_cpu_load ]]; then
+	echo "Erreur lors de la récupération de la charge du CPU"
+fi
+
+read -p "Souhaitez-vous vérifier la charge du CPU ? (y/n) : " cpu_answer
+
+case "$cpu_answer" in
+y|Y)
+	echo $display_cpu_load
+	is_cpu_load_view="Consulté";;
+n|N) echo "Charge CPU non consulté";;
+*) echo "Réponse incorrecte"
+esac
+
 echo -e "\n============================="
 echo "===     Rapport Santé     ==="
 echo "============================="
 echo "Date : $(date)"
 echo "Espace disque utilisé : $useddisk"
-echo "Limite de l'espace disque définit : $limit"
+echo "Limite de l'espace disque définit : ${limit:-$saved_limit}"
 echo "Process recherché : ${entryprocess:-aucun}"
+echo "Charge CPU : ${is_cpu_load_view:-non consulté}"
 echo "===FIN==="
 
 read -p "Souhaitez-vous enregistrer ce rapport ? (y/n) : " save
@@ -69,8 +98,9 @@ y|Y)
 	  echo "=============================";
 	  echo "Date : $(date)";
 	  echo "Espace disque utilisé : $useddisk";
-	  echo "Limite de l'espace disque définit : $limit";
+	  echo "Limite de l'espace disque définit : ${limit:-$saved_limit}";
 	  echo "Process recherché : ${entryprocess:-aucun}";
+	  echo "Charge CPU : ${is_cpu_load_view:-non consulté}"
           echo "===FIN===";
 	} >> $LOGFILE
 	echo "Rapport enregistré dans health_server_report.log";;
